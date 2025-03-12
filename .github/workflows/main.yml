@@ -6,13 +6,8 @@ jobs:
   run-nanoserver:
     runs-on: windows-latest
     steps:
-      - name: Pull Nano Server Image
-        run: |
-          docker pull mcr.microsoft.com/windows/nanoserver:ltsc2022
-      
-      - name: Run a Command in Nano Server
-        run: |
-          docker run --rm mcr.microsoft.com/windows/nanoserver:ltsc2022 cmd /c echo Hello from Nano Server
+      - name: Setup Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@release/v1
 
       - name: Print MSVC and Windows SDK Paths
         run: |
