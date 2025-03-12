@@ -8,10 +8,15 @@ jobs:
     steps:
       - name: Setup Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@release/v1
-
-      - name: Print MSVC and Windows SDK Paths
+        with:
+          arch: x64
+          sdk: 10.0.22621.0
+          toolset: 14.42.34433
+          
+      - name: Print Environment Variables (PowerShell)
+        shell: pwsh
         run: |
-          echo "MSVC Path:"
-          echo %VCToolsInstallDir%
-          echo "Windows SDK Path:"
-          echo %WindowsSdkDir%
+          Write-Host "MSVC Path:"
+          Write-Host $env:VCToolsInstallDir
+          Write-Host "Windows SDK Path:"
+          Write-Host $env:WindowsSdkDir
