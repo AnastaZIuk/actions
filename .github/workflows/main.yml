@@ -9,7 +9,14 @@ jobs:
       - name: Pull Nano Server Image
         run: |
           docker pull mcr.microsoft.com/windows/nanoserver:ltsc2022
-
+      
       - name: Run a Command in Nano Server
         run: |
           docker run --rm mcr.microsoft.com/windows/nanoserver:ltsc2022 cmd /c echo Hello from Nano Server
+
+      - name: Print MSVC and Windows SDK Paths
+        run: |
+          echo "MSVC Path:"
+          echo %VCToolsInstallDir%
+          echo "Windows SDK Path:"
+          echo %WindowsSdkDir%
