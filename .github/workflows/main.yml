@@ -8,8 +8,8 @@ jobs:
     steps:
       - name: Pull Nano Server Image
         run: |
-          docker pull mcr.microsoft.com/windows/nanoserver:ltsc2025
+          docker pull mcr.microsoft.com/windows/nanoserver:ltsc2022
 
       - name: Run a Command in Nano Server
         run: |
-          docker run --rm mcr.microsoft.com/windows/nanoserver:ltsc2025 cmd /c echo Hello from Nano Server
+          docker run --rm mcr.microsoft.com/windows/nanoserver:ltsc2022 cmd /c echo Hello from Nano Server
