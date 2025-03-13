@@ -9,10 +9,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download BuildKit
+        run: |
+          curl -SL --output buildx.exe https://github.com/docker/buildx/releases/download/v0.22.0-rc1/buildx-v0.22.0-rc1.windows-amd64.exe
+
       - uses: fawazahmed0/action-debug-vscode@main
 
       - name: Build image
         run: |
-          $env:DOCKER_BUILDKIT=1
-          docker build -t app:latest .
-        shell: pwsh
+          set DOCKER_BUILDKIT=1
+          set BUILDX_EXPERIMENTAL=1
+          buildx.exe build --cache-to type=gha --cache-from type=gha -t app:latest .
+
+      - uses: fawazahmed0/action-debug-vscode@main
