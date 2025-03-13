@@ -41,17 +41,19 @@ jobs:
         shell: pwsh
         run: |
           function Convert-To-MountPath($path, $destination) {
-            $destination = $destination -replace '^\\', ''
-            $path = $path -replace '^C:\\', ''
-            return "C:\$destination\$path"
+              $destination = $destination -replace '^[\\/]+', ''
+              $path = $path -replace '^C:[\\/]+', '' -replace '[\\/]+', '\'
+              return "C:\$destination\$path" -replace '[\\/]+', '\'
           }
+          
           $destination = ".mount\host"
           
-          $repoWorkspace = Convert-To-MountPath("${{ github.workspace }}", $destination)
-          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $destination)
-          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $destination)
-
+          $repoWorkspace = Convert-To-MountPath("${{ github.workspace }}", $destination).Trim()
+          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $destination).Trim()
+          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $destination).Trim()
+          
           Write-Host "Source Path: $repoWorkspace"
           Write-Host "MSVC Path: $vctoolsPath"
           Write-Host "Windows SDK Path: $windowsSdkPath"
+
 
