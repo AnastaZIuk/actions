@@ -31,4 +31,27 @@ jobs:
           $env:BUILDX_EXPERIMENTAL=1
           .\buildx.exe build --cache-to type=gha,mode=max --cache-from type=gha -t app:latest .
 
-      - uses: fawazahmed0/action-debug-vscode@main
+      - name: Setup Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@release/v1
+        with:
+          arch: x64
+          sdk: 10.0.22621.0
+        
+      - name: Run container
+        shell: pwsh
+        run: |
+          function Convert-To-MountPath($path, $destination) {
+            $destination = $destination -replace '^\\', ''
+            $path = $path -replace '^C:\\', ''
+            return "C:\$destination\$path"
+          }
+          $destination = ".mount\host"
+          
+          $repoWorkspace = Convert-To-MountPath("${{ github.workspace }}", $destination)
+          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $destination)
+          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $destination)
+
+          Write-Host "Source Path: $repoWorkspace"
+          Write-Host "MSVC Path: $vctoolsPath"
+          Write-Host "Windows SDK Path: $windowsSdkPath"
+
