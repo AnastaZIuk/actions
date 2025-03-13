@@ -6,16 +6,14 @@ jobs:
   run-nanoserver:
     runs-on: windows-latest
     steps:
-      - name: Setup Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@release/v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+    
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
-          arch: x64
-          sdk: 10.0.22621.0
-          
-      - name: Print Environment Variables (PowerShell)
-        shell: pwsh
-        run: |
-          Write-Host "MSVC Path:"
-          Write-Host $env:VCToolsInstallDir
-          Write-Host "Windows SDK Path:"
-          Write-Host $env:WindowsSdkDir
+          context: .
+          push: true
+          tags: user/app:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
