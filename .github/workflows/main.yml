@@ -41,9 +41,9 @@ jobs:
         shell: pwsh
         run: |
           function Convert-To-MountPath($path, $destination) {
-              $destination = [System.IO.Path]::GetFullPath("C:\$destination")
-              $relativePath = $path -replace '^C:', ''
-              return [System.IO.Path]::Combine($relativePath, $destination)
+            $destination = $destination -replace '^[\\/]+', ''
+            $path = $path -replace '^C:[\\/]+', '' -replace '[\\/]+', '\'
+            return "C:\$destination\$path" -replace '[\\/]+', '\' -replace '\s+$', ''
           }
           
           $repoWorkspace = "${{ github.workspace }}"
