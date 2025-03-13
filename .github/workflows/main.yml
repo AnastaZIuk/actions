@@ -40,10 +40,19 @@ jobs:
       - name: Run container
         shell: pwsh
         run: |
-          function Convert-To-MountPath($path, $destination) {
-              $destination = $destination -replace '^[\\/]+', ''
-              $path = $path -replace '^C:[\\/]+', '' -replace '[\\/]+', '\'
-              return "C:\$destination\$path" -replace '\\+\s*$', '' -replace '[\\/]+', '\'
+          function Convert-To-MountPath {
+              param(
+                  [Parameter(Mandatory=$true)]
+                  [string]$path,
+          
+                  [Parameter(Mandatory=$true)]
+                  [string]$destination
+              )
+          
+              $restOfPath = $path -replace '^[A-Za-z]:', ''
+              $newPath = Join-Path "C:\" -ChildPath (Join-Path $destination $restOfPath)
+              $normalizedPath = [System.IO.Path]::GetFullPath((New-Object -TypeName System.IO.DirectoryInfo -ArgumentList $newPath).FullName).TrimEnd('\')
+              return $normalizedPath
           }
           
           $repoWorkspace = "${{ github.workspace }}"
