@@ -41,19 +41,20 @@ jobs:
         shell: pwsh
         run: |
           function Convert-To-MountPath($path, $destination) {
-              $destination = $destination -replace '^[\\/]+', ''
-              $path = $path -replace '^C:[\\/]+', '' -replace '[\\/]+', '\'
-              return "C:\$destination\$path" -replace '[\\/]+', '\'
+              $destination = [System.IO.Path]::GetFullPath("C:\$destination\")
+              $relativePath = $path -replace '^C:[\\/]+', ''
+              return [System.IO.Path]::Combine($destination, $relativePath)
           }
           
+          $repoWorkspace = "${{ github.workspace }}"
           $destination = ".mount\host"
           
-          $repoWorkspace = Convert-To-MountPath("${{ github.workspace }}", $destination).Trim()
-          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $destination).Trim()
-          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $destination).Trim()
+          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $destination)
+          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $destination)
           
-          Write-Host "Source Path: $repoWorkspace"
-          Write-Host "MSVC Path: $vctoolsPath"
-          Write-Host "Windows SDK Path: $windowsSdkPath"
+          Write-Host "Source Host Path: $repoWorkspace"
+          Write-Host "MSVC Container Path: $vctoolsPath"
+          Write-Host "Windows SDK Container Path: $windowsSdkPath"
+
 
 
