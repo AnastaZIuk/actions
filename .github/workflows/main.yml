@@ -42,15 +42,15 @@ jobs:
         run: |
           function Convert-To-MountPath($path, $destination) {
               $destination = $destination -replace '^[\\/]+', ''
-              $path = $path -replace '^C:[\\/]+', '' -replace '\s+$', '' -replace '[\\/]+', '\'
-              return "C:\$destination\$path"
+              $path = $path -replace '^C:[\\/]+', '' -replace '[\\/]+', '\'
+              return "C:\$destination\$path".Trim()
           }
           
           $repoWorkspace = "${{ github.workspace }}"
-          $destination = ".mount\host"
+          $mount = ".mount\host"
           
-          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $destination)
-          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $destination)
+          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $mount)
+          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $mount)
           
           Write-Host "Source Host Path: $repoWorkspace"
           Write-Host "MSVC Container Path: $vctoolsPath"
