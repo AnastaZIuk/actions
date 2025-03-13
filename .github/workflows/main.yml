@@ -58,8 +58,8 @@ jobs:
           $repoWorkspace = "${{ github.workspace }}"
           $mount = ".mount\host"
           
-          $vctoolsPath = Convert-To-MountPath($env:VCToolsInstallDir, $mount)
-          $windowsSdkPath = Convert-To-MountPath($env:WindowsSdkDir, $mount)
+          $vctoolsPath = Convert-To-MountPath -path "$env:VCToolsInstallDir" -destination "$mount"
+          $windowsSdkPath = Convert-To-MountPath -path "$env:WindowsSdkDir" -destination "$mount"
           
           Write-Host "Source Host Path: $repoWorkspace"
           Write-Host "MSVC Container Path: $vctoolsPath"
