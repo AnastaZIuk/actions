@@ -65,6 +65,9 @@ jobs:
           Write-Host "MSVC Container Path: $vctoolsPath"
           Write-Host "Windows SDK Container Path: $windowsSdkPath"
 
+          docker run -dit --name orphan -v C:\:C:\$mount `
+            -e VCTOOLS_PATH="$vctoolsPath" `
+            -e WINDOWS_SDK_PATH="$windowsSdkPath" `
+            mcr.microsoft.com/windows/nanoserver:ltsc2022 cmd
 
-
-
+      - uses: fawazahmed0/action-debug-vscode@main
