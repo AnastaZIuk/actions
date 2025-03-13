@@ -43,7 +43,7 @@ jobs:
           function Convert-To-MountPath($path, $destination) {
               $destination = $destination -replace '^[\\/]+', ''
               $path = $path -replace '^C:[\\/]+', '' -replace '[\\/]+', '\'
-              return "C:\$destination\$path".Trim()
+              return "C:\$destination\$path" -replace '\\+\s*$', '' -replace '[\\/]+', '\'
           }
           
           $repoWorkspace = "${{ github.workspace }}"
@@ -55,6 +55,7 @@ jobs:
           Write-Host "Source Host Path: $repoWorkspace"
           Write-Host "MSVC Container Path: $vctoolsPath"
           Write-Host "Windows SDK Container Path: $windowsSdkPath"
+
 
 
 
