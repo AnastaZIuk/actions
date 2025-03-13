@@ -9,6 +9,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - uses: fawazahmed0/action-debug-vscode@main
+
       - name: Build image
         run: |
           $env:DOCKER_BUILDKIT=1
