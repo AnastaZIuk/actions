@@ -70,11 +70,4 @@ jobs:
             -e WINDOWS_SDK_PATH="$windowsSdkPath" `
             mcr.microsoft.com/windows/nanoserver:ltsc2022 cmd
 
-      - uses: Vampire/setup-wsl@v5
-        with:
-          distribution: Alpine
-          wsl-version: 2
-          additional-packages: docker
-          use-cache: 'true'
-
       - uses: fawazahmed0/action-debug-vscode@main
