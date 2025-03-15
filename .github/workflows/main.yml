@@ -74,5 +74,7 @@ jobs:
         with:
           distribution: Alpine
           wsl-version: 2
+          additional-packages: docker
+          use-cache: 'true'
 
       - uses: fawazahmed0/action-debug-vscode@main
