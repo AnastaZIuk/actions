@@ -72,7 +72,7 @@ jobs:
 
       - uses: Vampire/setup-wsl@v5
         with:
-          distribution: ''
+          distribution: Alpine
           wsl-version: 2
 
       - uses: fawazahmed0/action-debug-vscode@main
