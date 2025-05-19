@@ -1,20 +1,20 @@
-name: Build → Push → Run GHCR Image
+name: Build and Push to GHCR (Manual Dispatch, Auto Link to Repo)
 
 on:
   workflow_dispatch:
+
+env:
+  VERSION: 0.0.1
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
-    outputs:
-      image_name: ${{ steps.vars.outputs.image_name }}
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set lowercase image name and repo URL
+    - name: Set lowercase image name
       id: vars
       run: |
         IMAGE_NAME="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest"
@@ -26,27 +26,31 @@ jobs:
       run: |
         cat <<EOF > Dockerfile
         FROM alpine:latest
+        ARG VER_TEST
         LABEL org.opencontainers.image.source="${{ steps.vars.outputs.repo_url }}"
-        LABEL org.opencontainers.image.description="Test"
-        CMD ["echo", "Hello from the container run step!"]
+        LABEL org.opencontainers.image.description="Testing desc"
+        LABEL version=\$VER_TEST
+        CMD ["sh", "-c", "echo Image version is \$VER_TEST"]
         EOF
 
     - name: Log in to GitHub Container Registry
       run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
     - name: Build Docker image
-      run: docker build -t ${{ steps.vars.outputs.image_name }} .
-
-    - name: Push Docker image
-      run: docker push ${{ steps.vars.outputs.image_name }}
-
-  run-container:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Pull and run container
       run: |
-        IMAGE=${{ needs.build-and-push.outputs.image_name }}
-        docker pull $IMAGE
-        docker run --rm $IMAGE
+        IMAGE_NAME=${{ steps.vars.outputs.image_name }}
+        IMAGE_NAME_VERSION="${IMAGE_NAME%:latest}:$VERSION"
+
+        docker build \
+          --build-arg VER_TEST=$VERSION \
+          -t $IMAGE_NAME \
+          -t $IMAGE_NAME_VERSION \
+          .
+
+    - name: Push Docker images
+      run: |
+        IMAGE_NAME=${{ steps.vars.outputs.image_name }}
+        IMAGE_NAME_VERSION="${IMAGE_NAME%:latest}:$VERSION"
+
+        docker push $IMAGE_NAME
+        docker push $IMAGE_NAME_VERSION
