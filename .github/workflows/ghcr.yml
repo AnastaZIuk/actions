@@ -21,13 +21,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set lowercase image name
+    - name: Set lowercase image names
       id: vars
+      shell: pwsh
       run: |
-        $imageName = "ghcr.io/$($env:GITHUB_REPOSITORY.ToLower())"
-        $imageNameVersion = "$imageName:$env:VERSION"
+        $repo = $env:GITHUB_REPOSITORY.ToLower()
+        $imageBase = "ghcr.io/$repo"
+        $imageLatest = "${imageBase}:latest"
+        $imageVersioned = "${imageBase}:${env:VERSION}"
         $repoUrl = "https://github.com/$env:GITHUB_REPOSITORY"
-        "image_name_version=$imageNameVersion" >> $env:GITHUB_OUTPUT
+
+        "image_latest=$imageLatest" >> $env:GITHUB_OUTPUT
+        "image_versioned=$imageVersioned" >> $env:GITHUB_OUTPUT
         "repo_url=$repoUrl" >> $env:GITHUB_OUTPUT
 
     - name: Write Dockerfile inline
@@ -48,11 +53,13 @@ jobs:
       run: |
         docker build `
           --build-arg VER_TEST=$env:VERSION `
-          -t "${{ steps.vars.outputs.image_name_version }}" .
+          -t "${{ steps.vars.outputs.image_latest }}" `
+          -t "${{ steps.vars.outputs.image_versioned }}" .
 
-    - name: Push Docker image
+    - name: Push Docker images
       run: |
-        docker push "${{ steps.vars.outputs.image_name_version }}"
+        docker push "${{ steps.vars.outputs.image_latest }}"
+        docker push "${{ steps.vars.outputs.image_versioned }}"
 
   run-image:
     needs: build-and-push
@@ -68,5 +75,5 @@ jobs:
 
     - name: Pull and run container
       run: |
-        docker pull "${{ needs.build-and-push.outputs.image_name_version }}"
-        docker run --rm "${{ needs.build-and-push.outputs.image_name_version }}"
+        docker pull "${{ needs.build-and-push.outputs.image_latest }}"
+        docker run --rm "${{ needs.build-and-push.outputs.image_versioned }}"
