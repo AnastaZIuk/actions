@@ -1,4 +1,4 @@
-name: Build and Push to GHCR (Manual Dispatch, Auto Link to Repo)
+name: Build → Push → Run GHCR Image
 
 on:
   workflow_dispatch:
@@ -7,11 +7,14 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    outputs:
+      image_name: ${{ steps.vars.outputs.image_name }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set lowercase image name
+    - name: Set lowercase image name and repo URL
       id: vars
       run: |
         IMAGE_NAME="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest"
@@ -24,7 +27,7 @@ jobs:
         cat <<EOF > Dockerfile
         FROM alpine:latest
         LABEL org.opencontainers.image.source="${{ steps.vars.outputs.repo_url }}"
-        CMD ["echo", "Hello from a minimal image!"]
+        CMD ["echo", "Hello from the container run step!"]
         EOF
 
     - name: Log in to GitHub Container Registry
@@ -35,3 +38,14 @@ jobs:
 
     - name: Push Docker image
       run: docker push ${{ steps.vars.outputs.image_name }}
+
+  run-container:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pull and run container
+      run: |
+        IMAGE=${{ needs.build-and-push.outputs.image_name }}
+        docker pull $IMAGE
+        docker run --rm $IMAGE
