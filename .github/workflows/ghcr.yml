@@ -11,8 +11,10 @@ jobs:
     runs-on: windows-2022
 
     outputs:
-      image_name_version: ${{ steps.vars.outputs.image_name_version }}
-
+      image_name_version: ${{ steps.vars.outputs.image_versioned }}
+      image_latest: ${{ steps.vars.outputs.image_latest }}
+      repo_url: ${{ steps.vars.outputs.repo_url }}
+      
     defaults:
       run:
         shell: pwsh
