@@ -1,4 +1,4 @@
-name: Build and Push to GHCR (Manual Dispatch, Inline Dockerfile)
+name: Build and Push to GHCR (Manual Dispatch, Auto Link to Repo)
 
 on:
   workflow_dispatch:
@@ -11,18 +11,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Write Dockerfile inline
-      run: |
-        cat <<EOF > Dockerfile
-        FROM alpine:latest
-        CMD ["echo", "Hello from a minimal image!"]
-        EOF
-
     - name: Set lowercase image name
       id: vars
       run: |
         IMAGE_NAME="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest"
+        REPO_URL="https://github.com/${{ github.repository }}"
         echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+        echo "repo_url=$REPO_URL" >> $GITHUB_OUTPUT
+
+    - name: Write Dockerfile inline
+      run: |
+        cat <<EOF > Dockerfile
+        FROM alpine:latest
+        LABEL org.opencontainers.image.source="${{ steps.vars.outputs.repo_url }}"
+        CMD ["echo", "Hello from a minimal image!"]
+        EOF
 
     - name: Log in to GitHub Container Registry
       run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
