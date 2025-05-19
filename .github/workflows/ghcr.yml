@@ -1,4 +1,4 @@
-name: Build and Push to GHCR (Manual Dispatch, Auto Link to Repo)
+name: Build and Push Windows Nano Server Image
 
 on:
   workflow_dispatch:
@@ -8,11 +8,14 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: windows-2022
 
     outputs:
-      image_name: ${{ steps.vars.outputs.image_name }}
       image_name_version: ${{ steps.vars.outputs.image_name_version }}
+
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
     - name: Checkout code
@@ -21,48 +24,49 @@ jobs:
     - name: Set lowercase image name
       id: vars
       run: |
-        IMAGE_NAME="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest"
-        IMAGE_NAME_VERSION="${IMAGE_NAME%:latest}:$VERSION"
-        REPO_URL="https://github.com/${{ github.repository }}"
-        echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-        echo "image_name_version=$IMAGE_NAME_VERSION" >> $GITHUB_OUTPUT
-        echo "repo_url=$REPO_URL" >> $GITHUB_OUTPUT
+        $imageName = "ghcr.io/$($env:GITHUB_REPOSITORY.ToLower())"
+        $imageNameVersion = "$imageName:$env:VERSION"
+        $repoUrl = "https://github.com/$env:GITHUB_REPOSITORY"
+        "image_name_version=$imageNameVersion" >> $env:GITHUB_OUTPUT
+        "repo_url=$repoUrl" >> $env:GITHUB_OUTPUT
 
     - name: Write Dockerfile inline
       run: |
-        cat <<EOF > Dockerfile
-        FROM alpine:latest
+        @"
+        FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
         ARG VER_TEST
-        LABEL org.opencontainers.image.source="${{ steps.vars.outputs.repo_url }}"
-        LABEL org.opencontainers.image.description="Testing desc"
-        LABEL version=\$VER_TEST
-        CMD ["sh", "-c", "echo Image version is \$VER_TEST"]
-        EOF
+        LABEL org.opencontainers.image.source=`"${{ steps.vars.outputs.repo_url }}"`
+        LABEL org.opencontainers.image.description="Windows NanoServer test"
+        LABEL version=`"$VER_TEST"`
+        CMD ["cmd", "/c", "echo Image version is %VER_TEST%"]
+        "@ | Set-Content -Path Dockerfile
 
     - name: Log in to GitHub Container Registry
-      run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u $env:GITHUB_ACTOR --password-stdin
 
     - name: Build Docker image
       run: |
-        docker build \
-          --build-arg VER_TEST=$VERSION \
-          -t ${{ steps.vars.outputs.image_name }} \
-          -t ${{ steps.vars.outputs.image_name_version }} .
+        docker build `
+          --build-arg VER_TEST=$env:VERSION `
+          -t "${{ steps.vars.outputs.image_name_version }}" .
 
-    - name: Push Docker images
+    - name: Push Docker image
       run: |
-        docker push ${{ steps.vars.outputs.image_name }}
-        docker push ${{ steps.vars.outputs.image_name_version }}
+        docker push "${{ steps.vars.outputs.image_name_version }}"
 
   run-image:
     needs: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: windows-2022
+
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
     - name: Log in to GitHub Container Registry
-      run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u $env:GITHUB_ACTOR --password-stdin
 
     - name: Pull and run container
       run: |
-        docker pull ${{ needs.build-and-push.outputs.image_name_version }}
-        docker run --rm ${{ needs.build-and-push.outputs.image_name_version }}
+        docker pull "${{ needs.build-and-push.outputs.image_name_version }}"
+        docker run --rm "${{ needs.build-and-push.outputs.image_name_version }}"
