@@ -27,6 +27,7 @@ jobs:
         cat <<EOF > Dockerfile
         FROM alpine:latest
         LABEL org.opencontainers.image.source="${{ steps.vars.outputs.repo_url }}"
+        LABEL org.opencontainers.image.description="Test"
         CMD ["echo", "Hello from the container run step!"]
         EOF
 
