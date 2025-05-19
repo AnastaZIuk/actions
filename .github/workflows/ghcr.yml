@@ -11,10 +11,10 @@ jobs:
     runs-on: windows-2022
 
     outputs:
-      image_name_version: ${{ steps.vars.outputs.image_versioned }}
+      image_versioned: ${{ steps.vars.outputs.image_versioned }}
       image_latest: ${{ steps.vars.outputs.image_latest }}
       repo_url: ${{ steps.vars.outputs.repo_url }}
-      
+
     defaults:
       run:
         shell: pwsh
@@ -25,7 +25,6 @@ jobs:
 
     - name: Set lowercase image names
       id: vars
-      shell: pwsh
       run: |
         $repo = $env:GITHUB_REPOSITORY.ToLower()
         $imageBase = "ghcr.io/$repo"
@@ -39,12 +38,13 @@ jobs:
 
     - name: Write Dockerfile inline
       run: |
+        $repoUrl = "${{ steps.vars.outputs.repo_url }}"
         @"
         FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
         ARG VER_TEST
-        LABEL org.opencontainers.image.source=`"${{ steps.vars.outputs.repo_url }}"`
+        LABEL org.opencontainers.image.source=`"$repoUrl`"
         LABEL org.opencontainers.image.description="Windows NanoServer test"
-        LABEL version=`"$VER_TEST"`
+        LABEL version=`"$VER_TEST`"
         CMD ["cmd", "/c", "echo Image version is %VER_TEST%"]
         "@ | Set-Content -Path Dockerfile
 
@@ -78,4 +78,6 @@ jobs:
     - name: Pull and run container
       run: |
         docker pull "${{ needs.build-and-push.outputs.image_latest }}"
+        docker run --rm "${{ needs.build-and-push.outputs.image_latest }}"
+        docker pull "${{ needs.build-and-push.outputs.image_versioned }}"
         docker run --rm "${{ needs.build-and-push.outputs.image_versioned }}"
