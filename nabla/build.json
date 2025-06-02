@@ -1,7 +1,10 @@
 {
-  "label": "windows",
+  "color": "red",
   "message": "failing",
   "schemaVersion": 1,
-  "color": "red",
-  "url": "https://github.com/AnastaZIuk/actions/actions/runs/15390006174"
+  "links": [
+    "https://github.com/AnastaZIuk/actions/actions/runs/15390170488",
+    "https://github.com/AnastaZIuk/actions/actions/runs/15390170488"
+  ],
+  "label": "windows"
 }
