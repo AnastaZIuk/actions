@@ -14,26 +14,51 @@ jobs:
       contents: write
 
     steps:
+      - name: Dummy failing step for testing
+        run: exit 1
+
       - name: Update Badges
+        if: ${{ always() }}
+        shell: pwsh
         run: |
+          $jobStatus = "${{ job.status }}"
+          $buildMessage = if ($jobStatus -eq "success") { "passing" } else { "failing" }
+          $buildColor = if ($jobStatus -eq "success") { "brightgreen" } else { "red" }
+
+          # Build status badge
+          $buildBadge = @{
+            schemaVersion = 1
+            label = "build"
+            message = $buildMessage
+            color = $buildColor
+          } | ConvertTo-Json -Depth 2
+
+          $buildPath = ".badge-public/nabla"
+          New-Item -ItemType Directory -Path $buildPath -Force | Out-Null
+          $buildBadge | Set-Content -Path "$buildPath/build.json" -Encoding utf8
+
+          # Nabla Shader Compiler Godbolt docker package badge
           $image = "mcr.microsoft.com/windows/servercore:ltsc2022"
           docker pull $image | Out-Null
           $size = docker image ls $image --format "{{.Size}}"
-          $badgeJson = @{
+
+          $imageBadge = @{
             schemaVersion = 1
             label = $image
             message = $size
             color = "blue"
           } | ConvertTo-Json -Depth 2
-          $path = ".badge-public/packages/nabla-shader-compiler-nsc"
-          New-Item -ItemType Directory -Path $path -Force | Out-Null
-          $badgeJson | Set-Content -Path "$path/image-badge.json" -Encoding utf8
+
+          $imagePath = ".badge-public/packages/nabla-shader-compiler-nsc"
+          New-Item -ItemType Directory -Path $imagePath -Force | Out-Null
+          $imageBadge | Set-Content -Path "$imagePath/image-badge.json" -Encoding utf8
 
       - name: Deploy Github Pages
+        if: ${{ always() }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: badges
           publish_dir: .badge-public
           keep_files: true
-          commit_message: "auto repository badge status update, dispatched from"
+          commit_message: "auto repository badge status update, dispatched from ${{ github.sha }}"
