@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "color": "blue",
+  "message": "5.18GB",
   "label": "mcr.microsoft.com/windows/servercore:ltsc2022",
-  "message": "5.18GB"
+  "color": "blue"
 }
