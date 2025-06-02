@@ -2,13 +2,16 @@ name: Badge Test
 
 on:
   workflow_dispatch:
-  
+
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  run-nanoserver:
+  run-windows:
     runs-on: windows-2022
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
 
     steps:
       - name: Update Badges
