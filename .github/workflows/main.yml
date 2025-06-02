@@ -14,4 +14,4 @@ jobs:
           host: godbolt.devsh.eu
           username: DummyUser
           key: ${{ secrets.CE_KEY }}
-          script_path: docker/update.bat
+          script: docker ps & docker info
