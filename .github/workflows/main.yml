@@ -36,4 +36,4 @@ jobs:
           publish_branch: badges
           publish_dir: .badge-public
           keep_files: true
-          commit_message: "auto repository badge status update, dispatched from ${{ github.sha }}"
+          commit_message: "auto repository badge status update, dispatched from"
