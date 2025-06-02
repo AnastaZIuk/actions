@@ -32,7 +32,7 @@ jobs:
             label = "windows"
             message = $buildMessage
             color = $buildColor
-            link = @($runUrl)
+            link = $runUrl
           } | ConvertTo-Json -Depth 2
 
           $buildPath = ".badge-public/nabla"
