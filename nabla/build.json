@@ -1,6 +1,9 @@
 {
+  "link": [
+    "https://github.com/AnastaZIuk/actions/actions/runs/15389737842"
+  ],
+  "label": "windows",
+  "color": "red",
   "schemaVersion": 1,
-  "message": "failing",
-  "label": "build",
-  "color": "red"
+  "message": "failing"
 }
