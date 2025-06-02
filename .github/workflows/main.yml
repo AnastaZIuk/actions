@@ -26,13 +26,11 @@ jobs:
           $buildColor = if ($jobStatus -eq "success") { "brightgreen" } else { "red" }
 
           # Build status badge
-          $runUrl = "https://github.com/${env:GITHUB_REPOSITORY}/actions/runs/${env:GITHUB_RUN_ID}"
           $buildBadge = @{
             schemaVersion = 1
             label = "windows"
             message = $buildMessage
             color = $buildColor
-            links = @($runUrl, $runUrl)
           } | ConvertTo-Json -Depth 2
 
           $buildPath = ".badge-public/nabla"
