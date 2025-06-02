@@ -14,4 +14,4 @@ jobs:
           host: godbolt.devsh.eu
           username: DummyUser
           key: ${{ secrets.CE_KEY }}
-          script: docker ps & docker info
+          script: curl -sSL https://raw.githubusercontent.com/Devsh-Graphics-Programming/Nabla/master/compose.yml -o compose.yml & docker compose up -d --pull always & docker image prune -f
