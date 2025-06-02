@@ -2,7 +2,7 @@
   "color": "red",
   "message": "failing",
   "schemaVersion": 1,
-  "links": [
+  "link": [
     "https://github.com/AnastaZIuk/actions/actions/runs/15390170488",
     "https://github.com/AnastaZIuk/actions/actions/runs/15390170488"
   ],
