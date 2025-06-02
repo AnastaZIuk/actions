@@ -1,68 +1,32 @@
-name: NanoServer Test
+name: Badge Test
 
 on:
   workflow_dispatch:
 
 jobs:
   run-nanoserver:
-    runs-on: windows-latest
-
-    concurrency:
-      group: nanoserver-build
-      cancel-in-progress: true
+    runs-on: windows-2022
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download BuildKit
+      - name: Update Badges
         run: |
-          curl -SL --output buildx.exe https://github.com/docker/buildx/releases/download/v0.22.0-rc1/buildx-v0.22.0-rc1.windows-amd64.exe
+          $image = "mcr.microsoft.com/windows/servercore:ltsc2022"
+          docker pull $image | Out-Null
+          $size = docker image ls $image --format "{{.Size}}"
+          $badgeJson = @{
+            schemaVersion = 1
+            label = $image
+            message = $size
+            color = "blue"
+          } | ConvertTo-Json -Depth 2
+          $path = ".badge-public/packages/nabla-shader-compiler-nsc"
+          New-Item -ItemType Directory -Path $path -Force | Out-Null
+          $badgeJson | Set-Content -Path "$path/image-badge.json" -Encoding utf8
 
-      - name: Build image
-        shell: pwsh
-        run: |
-          $env:DOCKER_BUILDKIT=1
-          $env:BUILDX_EXPERIMENTAL=1
-          .\buildx.exe build --cache-to type=gha,mode=max --cache-from type=gha -t app:latest .
-
-      - name: Setup Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@release/v1
+      - name: Deploy Github Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          arch: x64
-          sdk: 10.0.22621.0
-        
-      - name: Run container
-        shell: pwsh
-        run: |
-          function Convert-To-MountPath {
-              param(
-                  [Parameter(Mandatory=$true)]
-                  [string]$path,
-          
-                  [Parameter(Mandatory=$true)]
-                  [string]$destination
-              )
-          
-              $restOfPath = $path -replace '^[A-Za-z]:', ''
-              $newPath = Join-Path "C:\" -ChildPath (Join-Path $destination $restOfPath)
-              $normalizedPath = [System.IO.Path]::GetFullPath((New-Object -TypeName System.IO.DirectoryInfo -ArgumentList $newPath).FullName).TrimEnd('\')
-              return $normalizedPath
-          }
-          
-          $repoWorkspace = "${{ github.workspace }}"
-          $mount = ".mount\host"
-          
-          $vctoolsPath = Convert-To-MountPath -path "$env:VCToolsInstallDir" -destination "$mount"
-          $windowsSdkPath = Convert-To-MountPath -path "$env:WindowsSdkDir" -destination "$mount"
-          
-          Write-Host "Source Host Path: $repoWorkspace"
-          Write-Host "MSVC Container Path: $vctoolsPath"
-          Write-Host "Windows SDK Container Path: $windowsSdkPath"
-
-          docker run -dit --name orphan -v C:\:C:\$mount `
-            -e VCTOOLS_PATH="$vctoolsPath" `
-            -e WINDOWS_SDK_PATH="$windowsSdkPath" `
-            mcr.microsoft.com/windows/nanoserver:ltsc2022 cmd
-
-      - uses: fawazahmed0/action-debug-vscode@main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: badges
+          publish_dir: .badge-public
+          keep_files: true
