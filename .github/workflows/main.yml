@@ -15,4 +15,4 @@ jobs:
           username: DummyUser
           key: ${{ secrets.CE_KEY }}
           script: |
-            curl -sSL https://raw.githubusercontent.com/AnastaZIuk/actions/refs/heads/main/docker/update.ps1 -o update.ps1 & powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -NoExit -File update.ps1
+            powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -NoExit -File C:\Scripts\startup-docker.ps1
