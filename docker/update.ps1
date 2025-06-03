@@ -1,18 +1,3 @@
-Add-Type -AssemblyName System.Web.Extensions
-
-$configFile = Join-Path $env:USERPROFILE ".docker\config.json"
-
-if (Test-Path $configFile) {
-    $jsonText = Get-Content $configFile -Raw
-    $jsonObj = [System.Web.Script.Serialization.JavaScriptSerializer]::new().DeserializeObject($jsonText)
-    $jsonObj["credsStore"] = ""
-
-    $jsonNet = [Newtonsoft.Json.JsonConvert]::SerializeObject($jsonObj, [Newtonsoft.Json.Formatting]::Indented)
-    [System.IO.File]::WriteAllText($configFile, $jsonNet, [System.Text.Encoding]::UTF8)
-} else {
-    Write-Host "config.json not found, skipping credsStore patch."
-}
-
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Devsh-Graphics-Programming/Nabla/master/compose.yml" `
     -OutFile "compose.yml" `
     -Headers @{
