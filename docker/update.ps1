@@ -1,9 +1,14 @@
+Add-Type -AssemblyName System.Web.Extensions
+
 $configFile = Join-Path $env:USERPROFILE ".docker\config.json"
 
 if (Test-Path $configFile) {
-    $config = Get-Content $configFile -Raw | ConvertFrom-Json
-    $config.credsStore = ""
-    $config | ConvertTo-Json -Depth 10 -Compress:$false | Out-File -FilePath $configFile -Encoding utf8
+    $jsonText = Get-Content $configFile -Raw
+    $jsonObj = [System.Web.Script.Serialization.JavaScriptSerializer]::new().DeserializeObject($jsonText)
+    $jsonObj["credsStore"] = ""
+
+    $jsonNet = [Newtonsoft.Json.JsonConvert]::SerializeObject($jsonObj, [Newtonsoft.Json.Formatting]::Indented)
+    [System.IO.File]::WriteAllText($configFile, $jsonNet, [System.Text.Encoding]::UTF8)
 } else {
     Write-Host "config.json not found, skipping credsStore patch."
 }
