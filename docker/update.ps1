@@ -1,14 +1,12 @@
-$configPath = Join-Path $env:USERPROFILE ".docker"
-$configFile = Join-Path $configPath "config.json"
+$configFile = Join-Path $env:USERPROFILE ".docker\config.json"
 
-New-Item -Path $configPath -ItemType Directory -Force | Out-Null
-
-@'
-{
-	"auths": {},
-	"currentContext": "desktop-windows"
+if (Test-Path $configFile) {
+    $config = Get-Content $configFile -Raw | ConvertFrom-Json
+    $config.credsStore = ""
+    $config | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile -Encoding UTF8
+} else {
+    Write-Host "config.json not found, failed to apply credsStore patch."
 }
-'@ | Set-Content -Path $configFile -Encoding UTF8
 
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Devsh-Graphics-Programming/Nabla/master/compose.yml" `
     -OutFile "compose.yml" `
