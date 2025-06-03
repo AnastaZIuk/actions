@@ -1,3 +1,15 @@
+$configPath = Join-Path $env:USERPROFILE ".docker"
+$configFile = Join-Path $configPath "config.json"
+
+New-Item -Path $configPath -ItemType Directory -Force | Out-Null
+
+@'
+{
+	"auths": {},
+	"currentContext": "desktop-windows"
+}
+'@ | Set-Content -Path $configFile -Encoding UTF8
+
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Devsh-Graphics-Programming/Nabla/master/compose.yml" `
     -OutFile "compose.yml" `
     -Headers @{
@@ -26,15 +38,3 @@ try {
 docker compose -f compose.yml up -d --pull always --force-recreate
 
 docker image prune -f
-
-$configPath = Join-Path $env:USERPROFILE ".docker"
-$configFile = Join-Path $configPath "config.json"
-
-New-Item -Path $configPath -ItemType Directory -Force | Out-Null
-
-@'
-{
-	"auths": {},
-	"currentContext": "desktop-windows"
-}
-'@ | Set-Content -Path $configFile -Encoding UTF8
