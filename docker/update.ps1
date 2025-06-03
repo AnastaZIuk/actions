@@ -1,3 +1,14 @@
+$configDir = Join-Path $env:USERPROFILE ".docker"Add commentMore actions
+$configFile = Join-Path $configDir "config.json"
+$sourceUrl = "https://raw.githubusercontent.com/AnastaZIuk/actions/refs/heads/main/docker/windows-ctx-config.json"
+
+New-Item -Path $configDir -ItemType Directory -Force | Out-Null
+
+Invoke-WebRequest -Uri $sourceUrl -OutFile $configFile -Headers @{
+    "Cache-Control" = "no-cache"
+    "Pragma"        = "no-cache"
+}
+
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Devsh-Graphics-Programming/Nabla/master/compose.yml" `
     -OutFile "compose.yml" `
     -Headers @{
