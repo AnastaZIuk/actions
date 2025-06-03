@@ -3,9 +3,9 @@ $configFile = Join-Path $env:USERPROFILE ".docker\config.json"
 if (Test-Path $configFile) {
     $config = Get-Content $configFile -Raw | ConvertFrom-Json
     $config.credsStore = ""
-    $config | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile -Encoding UTF8
+    $config | ConvertTo-Json -Depth 10 -Compress:$false | Out-File -FilePath $configFile -Encoding utf8
 } else {
-    Write-Host "config.json not found, failed to apply credsStore patch."
+    Write-Host "config.json not found, skipping credsStore patch."
 }
 
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Devsh-Graphics-Programming/Nabla/master/compose.yml" `
