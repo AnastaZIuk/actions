@@ -82,8 +82,6 @@ jobs:
           
           docker run `
             --entrypoint ${{ env.entry }} -di --isolation process `
-            --env-file .\docker\ci-windows.env `
-            --env-file .\docker\ninja.env `
             --env "NSC_IMAGE_NAME=${{ steps.set-prefix.outputs.nscTargetTaggedImage }}" `
             --name orphan --network docker_default `
             -v "${{ github.workspace }}:${{ env.mount }}" `
