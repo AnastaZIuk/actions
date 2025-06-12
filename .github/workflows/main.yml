@@ -25,14 +25,14 @@ jobs:
         run: |
           echo "print from matrix ${{ matrix.config }}"
 
-      - name: Publish “Build Examples” check
+      - name: Publish \"Build Examples\" check
         if: always()
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const outcome = '${{ steps.print-step.outcome }}' === 'success' ? 'success' : 'failure';
-            await github.checks.create({
+            await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'Build Examples',
@@ -44,7 +44,7 @@ jobs:
                   ? 'Examples build passed'
                   : 'Examples build failed',
                 summary: outcome === 'success'
-                  ? `Matrix config "${{ matrix.config }}" printed successfully.`
-                  : `Matrix config "${{ matrix.config }}" had a failure in the print step.`
+                  ? `Matrix config \"${{ matrix.config }}\" printed successfully.`
+                  : `Matrix config \"${{ matrix.config }}\" had a failure in the print step.`
               }
             });
