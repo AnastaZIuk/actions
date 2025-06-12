@@ -26,26 +26,27 @@ jobs:
         run: |
           echo "print from matrix ${{ matrix.config }}"
 
-      - name: Publish "Build Examples" check
+      - name: Publish Build Examples check
         if: always()
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const cfg = '${{ matrix.config }}';
             const outcome = '${{ steps.print-step.outcome }}' === 'success' ? 'success' : 'failure';
             await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Build Examples',
+              name: `Build Examples (config=${cfg})`,
               head_sha: context.sha,
               status: 'completed',
               conclusion: outcome,
               output: {
                 title: outcome === 'success'
-                  ? 'Examples build passed'
-                  : 'Examples build failed',
+                  ? `Examples build passed for ${cfg}`
+                  : `Examples build failed for ${cfg}`,
                 summary: outcome === 'success'
-                  ? `Matrix config "${{ matrix.config }}" printed successfully.`
-                  : `Matrix config "${{ matrix.config }}" had a failure in the print step.`
+                  ? `Matrix config "${cfg}" printed successfully.`
+                  : `Matrix config "${cfg}" had a failure in the print step.`
               }
             });
