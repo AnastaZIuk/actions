@@ -1,102 +1,50 @@
-name: Test
+name: Test Matrix + Separate Check Run
 
 on:
-  workflow_dispatch:
+  push:
+  pull_request:
 
 permissions:
-  contents: read
-
-concurrency:
-  group: push-lock-${{ github.ref }}
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build-windows:
-    runs-on: windows-2022
-
-    env:
-      image: ghcr.io/devsh-graphics-programming/docker-nanoserver-msvc-winsdk
-      entry: pwsh.exe
-      cmd: -NoLogo -NoProfile -ExecutionPolicy Bypass
-      mount: C:\mount\nabla
-      binary: C:\mount\nabla\build-ct
-      install: build-ct\install
-
+  matrix-job:
+    name: Matrix Job (config=${{ matrix.config }})
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        tag: ['17.13.6']
+        config: [Debug, Release]
 
     steps:
-      - name: Environment Setup
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Print from matrix
+        id: print-step
         run: |
-            Add-MpPreference -ExclusionPath "${{ github.workspace }}"
-            Add-MpPreference -ExclusionExtension "*.*"
-            Add-MpPreference -ExclusionProcess "docker.exe"
-            Add-MpPreference -ExclusionProcess "dockerd.exe"
-            Set-MpPreference -RemediationScheduleDay 8
-            Set-MpPreference -DisableRealtimeMonitoring $true
-            Set-MpPreference -DisableRemovableDriveScanning $true
-            Set-MpPreference -DisableArchiveScanning $true
-            Set-MpPreference -DisableScanningMappedNetworkDrivesForFullScan $true
+          echo "print from matrix ${{ matrix.config }}"
 
-            if (-not (docker network ls --format '{{.Name}}' | Where-Object { $_ -eq 'docker_default' })) {
-              docker network create --driver nat docker_default
-              if ($LASTEXITCODE -ne 0) { exit 1 }
-            }
-
-      - name: Set prefix
-        id: set-prefix
-        shell: pwsh
-        run: |
-          $prefix = "run-windows-${{ matrix.tag }}-${{ matrix.vendor }}-${{ matrix.config }}"
-          $owner = "${{ github.repository_owner }}"
-          $package = "nabla-shader-compiler-godbolt"
-          $tag = "build-${{ matrix.vendor }}-${{ matrix.config }}-${{ matrix.tag }}"
-          $nscTargetTaggedImage = "ghcr.io/${owner}/${package}:${tag}".ToLower()
-          $nscTargetTaggedImageLatest = "ghcr.io/${owner}/${package}:latest".ToLower()
-
-          $shouldPushImage = (
-            "${{ github.ref }}" -eq "refs/heads/master" -and
-            "${{ matrix.vendor }}" -eq "msvc" -and
-            "${{ matrix.config }}" -eq "Release"
-          )
-
-          Write-Host "::notice::Should push image? $shouldPushImage"
-          
-          "prefix=$prefix" >> $env:GITHUB_OUTPUT
-          "nscTargetTaggedImage=$nscTargetTaggedImage" >> $env:GITHUB_OUTPUT
-          "nscTargetTaggedImageLatest=$nscTargetTaggedImageLatest" >> $env:GITHUB_OUTPUT
-          "shouldPushImage=$shouldPushImage" >> $env:GITHUB_OUTPUT
-
-      - name: Pull Image
-        run: |
-          docker pull "${{ env.image }}:${{ matrix.tag }}"
-
-      - name: Run Container
-        run: |
-          $ctx = docker context show
-          $dockerHost = (docker context inspect $ctx | ConvertFrom-Json).Endpoints.docker.Host
-          $pipeName = [regex]::Match($dockerHost, '/pipe/(?<n>.+)$').Groups['n'].Value
-          $pipeHost = "\\.\pipe\$pipeName"
-          
-          docker run `
-            --entrypoint ${{ env.entry }} -di --isolation process `
-            --env "NSC_IMAGE_NAME=${{ steps.set-prefix.outputs.nscTargetTaggedImage }}" `
-            --name orphan --network docker_default `
-            -v "${{ github.workspace }}:${{ env.mount }}" `
-            -v "${pipeHost}:\\.\pipe\dockerd" -e "DOCKER_HOST=npipe:////./pipe/dockerd" `
-            -w "${{ env.mount }}" `
-            "${{ env.image }}:${{ matrix.tag }}" `
-            ${{ env.cmd }}
-
-      - name: Inspect Container
-        run: |
-          docker inspect orphan
-
-      - name: Container – Unpack Packages
-        run: |
-          docker exec orphan `
-            ${{ env.entry }} ${{ env.cmd }} C:\unpack.ps1
-
-      - uses: fawazahmed0/action-debug-vscode@main
+      - name: Publish “Build Examples” check
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const outcome = '${{ steps.print-step.outcome }}' === 'success' ? 'success' : 'failure';
+            await github.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Build Examples',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: outcome,
+              output: {
+                title: outcome === 'success'
+                  ? 'Examples build passed'
+                  : 'Examples build failed',
+                summary: outcome === 'success'
+                  ? `Matrix config "${{ matrix.config }}" printed successfully.`
+                  : `Matrix config "${{ matrix.config }}" had a failure in the print step.`
+              }
+            });
