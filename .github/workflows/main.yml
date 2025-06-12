@@ -32,11 +32,16 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const cfg = '${{ matrix.config }}';
+            const cfg     = '${{ matrix.config }}';
             const outcome = '${{ steps.print-step.outcome }}' === 'success' ? 'success' : 'failure';
+            const { owner, repo } = context.repo;
+            const run_id = context.runId;
+            // This will deep-link to the web UI for this specific job + check-run
+            const logsUrl = `https://github.com/${owner}/${repo}/actions/runs/${run_id}`;
+            
             await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               name: `Build Examples (config=${cfg})`,
               head_sha: context.sha,
               status: 'completed',
@@ -45,8 +50,12 @@ jobs:
                 title: outcome === 'success'
                   ? `Examples build passed for ${cfg}`
                   : `Examples build failed for ${cfg}`,
-                summary: outcome === 'success'
-                  ? `Matrix config "${cfg}" printed successfully.`
-                  : `Matrix config "${cfg}" had a failure in the print step.`
+                summary: [
+                  outcome === 'success'
+                    ? `Matrix config \`${cfg}\` printed successfully.`
+                    : `Matrix config \`${cfg}\` had a failure in the print step.`,
+                  `---`,
+                  `[View full logs →](${logsUrl})`
+                ].join("\n\n")
               }
             });
