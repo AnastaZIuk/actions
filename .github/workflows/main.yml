@@ -24,6 +24,7 @@ jobs:
       - name: Print from matrix
         id: print-step
         run: |
+          fail it
           echo "print from matrix ${{ matrix.config }}"
 
       - name: Publish Build Examples check
