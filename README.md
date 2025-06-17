@@ -10,3 +10,5 @@
   <a href="https://discord.gg/Dx83Cu7suD">
     <img src="https://img.shields.io/discord/308323056592486420?label=discord&logo=discord&logoColor=white&color=7289DA" alt="Chat on Discord" /></a>
 </p>
+
+[![Test Matrix + Separate Check Run](https://github.com/AnastaZIuk/actions/actions/workflows/main.yml/badge.svg?event=push)](https://github.com/AnastaZIuk/actions/actions/workflows/main.yml)
