@@ -23,8 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run step and capture status
-        id: test-step
+      - name: Container – Build Examples
+        id: build-examples
+        continue-on-error: true
         run: |
           echo "Running matrix config: ${{ matrix.config }}"
           if [[ "${{ matrix.config }}" == "Debug" ]]; then
@@ -34,27 +35,25 @@ jobs:
             echo "Simulating success for Release"
             true
           fi
-        continue-on-error: true
 
-      - name: Set outcome output
-        id: outcome
+      - name: Examples - Set status
+        id: outcome-examples
         run: |
-          if [ "${{ steps.test-step.outcome }}" == "success" ]; then
+          if [ "${{ steps.build-examples.outcome }}" == "success" ]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT
           else
             echo "conclusion=failure" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create custom check run
+      - name: Examples - Check run
         if: always()
         uses: LouisBrunner/checks-action@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Examples (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
-          conclusion: ${{ steps.outcome.outputs.conclusion }}
+          conclusion: ${{ steps.outcome-examples.outputs.conclusion }}
           output: |
             {
-              "title": "Build result for config ${{ matrix.config }}",
-              "summary": "Conclusion: ${{ steps.outcome.outputs.conclusion }}",
-              "text": "See [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full details."
+              "title": "Examples build result for axis (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})",
+              "summary": "Conclusion: ${{ steps.outcome.outputs.conclusion }}, See [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full details."
             }
