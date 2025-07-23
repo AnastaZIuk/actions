@@ -54,6 +54,5 @@ jobs:
           conclusion: ${{ steps.outcome-examples.outputs.conclusion }}
           output: |
             {
-              "title": "Examples build result for axis (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})",
-              "summary": "Conclusion: ${{ steps.outcome.outputs.conclusion }}, See [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full details."
+              "summary": "Conclusion: ${{ steps.outcome-examples.outputs.conclusion }}, see [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full details."
             }
