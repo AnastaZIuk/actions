@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   matrix-job:
-    name: Build / Nabla (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
+    name: Nabla (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
