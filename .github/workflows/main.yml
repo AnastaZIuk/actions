@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   matrix-job:
-    name: Nabla (${{ matrix.vendor }}, ${{ matrix.tag }}, ${{ matrix.config }})
+    name: Nabla (${{ runner.os }}, ${{ matrix.vendor }} ${{ matrix.tag }}, ${{ matrix.config }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -33,7 +33,7 @@ jobs:
             const response = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: `Examples (${{ matrix.vendor }}, ${{ matrix.tag }}, ${{ matrix.config }})`,
+              name: `Examples (${{ runner.os }}, ${{ matrix.vendor }} ${{ matrix.tag }}, ${{ matrix.config }})`,
               head_sha: context.sha,
               status: 'in_progress'
             });
