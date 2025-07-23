@@ -27,7 +27,7 @@ jobs:
       - name: Container – Build Nabla
         run: |
           Write-Host "Dummy step"
-          exit 0
+          exit -1
 
       - name: Examples - Check run (Create)
         id: check-run-create
