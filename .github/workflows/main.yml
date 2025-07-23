@@ -47,11 +47,15 @@ jobs:
       - name: Examples - Check run (Set Conclusion)
         id: outcome-examples
         run: |
+          completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
           if [ "${{ steps.build-examples.outcome }}" == "success" ]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT
           else
             echo "conclusion=failure" >> $GITHUB_OUTPUT
           fi
+
+          echo "completed_at=$completed_at" >> $GITHUB_OUTPUT
 
       - name: Examples - Check run (REST, Completed)
         if: always()
@@ -60,9 +64,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Examples (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
           conclusion: ${{ steps.outcome-examples.outputs.conclusion }}
-          started_at: ${{ steps.timing.outputs.started_at }}
+          completed_at: ${{ steps.outcome-examples.outputs.completed_at }}
           output: |
             {
-              "title": "${{ steps.outcome-examples.outputs.conclusion }}",
               "summary": "Click [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) too see details."
             }
