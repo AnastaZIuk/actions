@@ -15,7 +15,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [Debug, Release]
+        vendor: [msvc]
+        config: [Release, Debug, RelWithDebInfo]
+        tag: ['17.13.6']
 
     steps:
       - name: Checkout
