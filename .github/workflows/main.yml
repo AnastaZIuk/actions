@@ -23,12 +23,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Examples - Check run (REST, In-Progress)
-        uses: LouisBrunner/checks-action@v2.0.0
+      - name: Examples - Check run (Create)
+        id: check-run-create
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Examples (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
-          status: in_progress
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const response = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: `Examples (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})`,
+              head_sha: context.sha,
+              status: 'in_progress'
+            });
+            return response.data.id;
 
       - name: Container – Build Examples
         id: build-examples
@@ -48,24 +57,27 @@ jobs:
         id: outcome-examples
         run: |
           completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
           if [ "${{ steps.build-examples.outcome }}" == "success" ]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT
           else
             echo "conclusion=failure" >> $GITHUB_OUTPUT
           fi
-
           echo "completed_at=$completed_at" >> $GITHUB_OUTPUT
 
-      - name: Examples - Check run (REST, Completed)
+      - name: Examples - Check run (Update)
         if: always()
-        uses: LouisBrunner/checks-action@v2.0.0
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Examples (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
-          conclusion: ${{ steps.outcome-examples.outputs.conclusion }}
-          completed_at: ${{ steps.outcome-examples.outputs.completed_at }}
-          output: |
-            {
-              "summary": "Click [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) too see details."
-            }
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: ${{ steps.check-run-create.outputs.result }},
+              status: 'completed',
+              conclusion: '${{ steps.outcome-examples.outputs.conclusion }}',
+              completed_at: '${{ steps.outcome-examples.outputs.completed_at }}',
+              output: {
+                summary: 'Click [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) to see details.'
+              }
+            });
