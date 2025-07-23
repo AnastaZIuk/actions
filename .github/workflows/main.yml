@@ -79,6 +79,6 @@ jobs:
               completed_at: '${{ steps.outcome-examples.outputs.completed_at }}',
               output: {
                 title: '',
-                summary: 'Click [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) to see details.'
+                summary: '[View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) to see details.'
               }
             });
