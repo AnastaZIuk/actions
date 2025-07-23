@@ -21,42 +21,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Print from matrix
-        id: print-step
+      - name: Run step and capture status
+        id: test-step
         run: |
-          fail it
-          echo "print from matrix ${{ matrix.config }}"
+          echo "Running matrix config: ${{ matrix.config }}"
+          if [[ "${{ matrix.config }}" == "Debug" ]]; then
+            echo "Simulating failure for Debug"
+            false  # this simulates failure
+          else
+            echo "Simulating success for Release"
+            true
+          fi
+        continue-on-error: true
 
-      - name: Publish Build Examples check
+      - name: Set outcome output
+        id: outcome
+        run: |
+          if [ "${{ steps.test-step.outcome }}" == "success" ]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create custom check run
         if: always()
-        uses: actions/github-script@v6
+        uses: LouisBrunner/checks-action@v2.0.0
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const cfg     = '${{ matrix.config }}';
-            const outcome = '${{ steps.print-step.outcome }}' === 'success' ? 'success' : 'failure';
-            const { owner, repo } = context.repo;
-            const run_id = context.runId;
-            // This will deep-link to the web UI for this specific job + check-run
-            const logsUrl = `https://github.com/${owner}/${repo}/actions/runs/${run_id}`;
-            
-            await github.rest.checks.create({
-              owner,
-              repo,
-              name: `Build Examples (config=${cfg})`,
-              head_sha: context.sha,
-              status: 'completed',
-              conclusion: outcome,
-              output: {
-                title: outcome === 'success'
-                  ? `Examples build passed for ${cfg}`
-                  : `Examples build failed for ${cfg}`,
-                summary: [
-                  outcome === 'success'
-                    ? `Matrix config \`${cfg}\` printed successfully.`
-                    : `Matrix config \`${cfg}\` had a failure in the print step.`,
-                  `---`,
-                  `[View full logs →](${logsUrl})`
-                ].join("\n\n")
-              }
-            });
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Build Examples (config=${{ matrix.config }})
+          conclusion: ${{ steps.outcome.outputs.conclusion }}
+          output: |
+            {
+              "title": "${{ steps.outcome.outputs.conclusion == 'success' && 'Build passed' || 'Build failed' }}",
+              "summary": "Matrix config \`${{ matrix.config }}\` finished with status \`${{ steps.outcome.outputs.conclusion }}\`.\n\n[View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            }
