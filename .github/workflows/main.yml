@@ -24,6 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Container – Build Nabla
+        run: |
+          Write-Host "Dummy step"
+          exit 0
+
       - name: Examples - Check run (Create)
         id: check-run-create
         uses: actions/github-script@v6
@@ -44,29 +49,30 @@ jobs:
         id: build-examples
         continue-on-error: true
         run: |
-          echo "Running matrix config: ${{ matrix.config }}"
-          sleep 10
-          if [[ "${{ matrix.config }}" == "Debug" ]]; then
-            echo "Simulating failure for Debug"
-            false
-          else
-            echo "Simulating success"
-            true
-          fi
+          Write-Host "Running matrix config: $env:Matrix_Config"
+          Start-Sleep -Seconds 10
+          if ($env:Matrix_Config -eq "Debug") {
+            Write-Host "Simulating failure for Debug"
+            exit 1
+          } else {
+            Write-Host "Simulating success"
+            exit 0
+          }
+        env:
+          Matrix_Config: ${{ matrix.config }}
 
       - name: Examples - Check run (Set Conclusion)
         id: outcome-examples
         run: |
-          completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          if [ "${{ steps.build-examples.outcome }}" == "success" ]; then
-            echo "conclusion=success" >> $GITHUB_OUTPUT
-          else
-            echo "conclusion=failure" >> $GITHUB_OUTPUT
-          fi
-          echo "completed_at=$completed_at" >> $GITHUB_OUTPUT
+          $completedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          if ("${{ steps.build-examples.outcome }}" -eq "success") {
+            "conclusion=success" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            "conclusion=failure" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+          "completed_at=$completedAt" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Examples - Check run (Update)
-        if: always()
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
