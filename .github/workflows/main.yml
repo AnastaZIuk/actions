@@ -63,6 +63,6 @@ jobs:
           started_at: ${{ steps.timing.outputs.started_at }}
           output: |
             {
-              "title": "Completed with ${{ steps.outcome-examples.outputs.conclusion }} status",
-              "summary": "Started at ${{ steps.timing.outputs.started_at }}\n\n[View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              "title": "${{ steps.outcome-examples.outputs.conclusion }}",
+              "summary": "Click [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) too see details."
             }
