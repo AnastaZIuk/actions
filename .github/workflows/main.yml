@@ -52,6 +52,7 @@ jobs:
           conclusion: ${{ steps.outcome.outputs.conclusion }}
           output: |
             {
-              "title": "${{ steps.outcome.outputs.conclusion == 'success' && 'Build passed' || 'Build failed' }}",
-              "summary": "Matrix config \`${{ matrix.config }}\` finished with status \`${{ steps.outcome.outputs.conclusion }}\`.\n\n[View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              "title": "Build result for config ${{ matrix.config }}",
+              "summary": "Conclusion: ${{ steps.outcome.outputs.conclusion }}",
+              "text": "See [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full details."
             }
