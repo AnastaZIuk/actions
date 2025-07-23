@@ -5,7 +5,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
   checks: write
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       - name: Container – Build Nabla
         run: |
           Write-Host "Dummy step"
-          exit -1
+          exit 0
 
       - name: Examples - Check run (Create)
         id: check-run-create
