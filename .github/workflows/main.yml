@@ -23,17 +23,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Examples - Check run (Start timestampt)
-        id: timing
-        run: echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
-
       - name: Examples - Check run (REST, In-Progress)
         uses: LouisBrunner/checks-action@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Examples (${{ matrix.vendor }}, ${{ matrix.config }}, ${{ matrix.tag }})
           status: in_progress
-          started_at: ${{ steps.timing.outputs.started_at }}
 
       - name: Container – Build Examples
         id: build-examples
@@ -68,5 +63,6 @@ jobs:
           started_at: ${{ steps.timing.outputs.started_at }}
           output: |
             {
+              "title": "Completed with ${{ steps.outcome-examples.outputs.conclusion }} status",
               "summary": "Started at ${{ steps.timing.outputs.started_at }}\n\n[View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
             }
