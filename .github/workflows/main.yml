@@ -1,8 +1,7 @@
 name: Build
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,82 +9,38 @@ permissions:
 
 jobs:
   matrix-job:
-    name: Nabla (${{ matrix.os }}, ${{ matrix.vendor }}-${{ matrix.tag }}, ${{ matrix.config }})
+    name: Update Images Endpoint Test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        vendor: [msvc]
-        config: [Release, Debug, RelWithDebInfo]
-        tag: ['17.13.6']
         os: [windows-2022]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Container – Build Nabla
+      - name: Update Images
         run: |
-          Write-Host "Dummy step"
-          exit 0
-
-      - name: Examples - Check run (Create)
-        id: check-run-create
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          result-encoding: string
-          script: |
-            const response = await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: `Examples (${{ matrix.os }}, ${{ matrix.vendor }}-${{ matrix.tag }}, ${{ matrix.config }})`,
-              head_sha: context.sha,
-              status: 'in_progress'
-            });
-            return response.data.id;
-
-      - name: Container – Build Examples
-        id: build-examples
-        continue-on-error: true
-        run: |
-          Write-Host "Running matrix config: $env:Matrix_Config"
-          Start-Sleep -Seconds 10
-          if ($env:Matrix_Config -eq "Debug") {
-            Write-Host "Simulating failure for Debug"
-            exit 1
-          } else {
-            Write-Host "Simulating success"
-            exit 0
-          }
-        env:
-          Matrix_Config: ${{ matrix.config }}
-
-      - name: Examples - Check run (Set Conclusion)
-        id: outcome-examples
-        run: |
-          $completedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-          if ("${{ steps.build-examples.outcome }}" -eq "success") {
-            "conclusion=success" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          } else {
-            "conclusion=failure" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          }
-          "completed_at=$completedAt" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Examples - Check run (Update)
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.checks.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              check_run_id: ${{ steps.check-run-create.outputs.result }},
-              status: 'completed',
-              conclusion: '${{ steps.outcome-examples.outputs.conclusion }}',
-              completed_at: '${{ steps.outcome-examples.outputs.completed_at }}',
-              output: {
-                title: '',
-                summary: '[View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) to see details.'
+          function Invoke-UpdateImages {
+              param(
+                  [string]$Token,
+                  [string]$Url = 'https://godbolt.devsh.eu/api/update-images'
+              )
+          
+              $resp = Invoke-WebRequest -Method Post `
+                                        -Uri $Url `
+                                        -Headers @{ 'X-API-Token' = $Token } `
+                                        -SkipHttpErrorCheck
+          
+              $httpCode = $resp.StatusCode
+              $body = $resp.Content | ConvertFrom-Json
+          
+              Write-Host "HTTP code : $httpCode"
+              Write-Host "status    : $($body.status)"
+              Write-Host "message   : $($body.message)"
+          
+              if ($httpCode -ne 200) {
+                  throw "Request failed"
               }
-            });
+          }
+          
+          $token = '${{ secrets.CE_IMAGE_UPDATE_TOKEN }}'
+          Invoke-UpdateImages -Token $token
