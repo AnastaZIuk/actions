@@ -17,9 +17,10 @@ jobs:
           filter: blob:none
           show-progress: false
 
-      - name: Init submodules (shallow + parallel)
+      - name: Init dependencies
         shell: pwsh
         run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
           git config --global protocol.version 2
           git submodule sync --recursive
           git -c submodule.fetchJobs=8 submodule update --init --recursive --depth 1 --jobs 8
