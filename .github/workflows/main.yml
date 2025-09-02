@@ -20,8 +20,6 @@ jobs:
     runs-on: windows-2022
     permissions:
       contents: read
-      actions: read
-
     strategy:
       fail-fast: false
       matrix:
@@ -33,11 +31,14 @@ jobs:
       vendor: msvc
 
     steps:
-      - name: Checkout shallow no submodules
+      - name: Checkout smoke from Nabla repository
         uses: actions/checkout@v4
         with:
+          repository: Devsh-Graphics-Programming/Nabla
+          ref: install-prebuilds
           fetch-depth: 1
-          submodules: 'false'
+          sparse-checkout: |
+            smoke
 
       - name: Select repo and token
         id: sel
@@ -81,4 +82,12 @@ jobs:
             }
           }
           Write-Host "Unpacked to $dest"
-          tree.com $dest /F /A
+          tree.com $dest /F
+
+      - name: Build smoke and run tests
+        shell: pwsh
+        run: |
+          cd smoke
+          cmake . -B out
+          cmake --build out --config ${{ matrix.config }}
+          ctest --test-dir out --force-new-ctest-process --output-on-failure -C ${{ matrix.config }}
