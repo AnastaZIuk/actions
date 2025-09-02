@@ -63,20 +63,23 @@ jobs:
       - name: Unpack installs
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path smoke\installs\${{ matrix.config }} | Out-Null
+          $dest = "smoke\installs\${{ matrix.config }}"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
           $tars = Get-ChildItem -Recurse -Path smoke\downloads\${{ matrix.config }} -Filter *-install.tar
           if (-not $tars) {
             $dirs = Get-ChildItem smoke\downloads\${{ matrix.config }} -Directory
             if ($dirs) {
               foreach ($d in $dirs) {
-                Copy-Item -Recurse -Force $d.FullName smoke\installs\${{ matrix.config }}
+                Copy-Item -Recurse -Force $d.FullName $dest
               }
             } else {
               throw "No install artifacts found for ${{ matrix.config }}"
             }
           } else {
             foreach ($t in $tars) {
-              tar -xf $t.FullName -C smoke\installs\${{ matrix.config }}
+              tar -xf $t.FullName -C $dest
             }
           }
-          Write-Host "Unpacked to smoke\\installs\\${{ matrix.config }}"
+          Write-Host "Unpacked to $dest"
+          Write-Host "Directory listing:"
+          Get-ChildItem -Recurse -Force -Path $dest
