@@ -1,91 +1,31 @@
-name: Unpack installs from another run (matrix)
+name: Fast Nabla Clone
 
 on:
   workflow_dispatch:
-    inputs:
-      repository:
-        description: owner/repo of source workflow (empty uses default)
-        required: false
-        default: Devsh-Graphics-Programming/Nabla
-      run_id:
-        description: ID of the workflow run
-        required: true
-      use_cross_repo_token:
-        description: Use secrets.CROSS_REPO_TOKEN (actions:read)
-        required: false
-        default: 'false'
 
 jobs:
-  unpack-installs-remote:
+  clone-nabla:
     runs-on: windows-2022
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        config: [Release, Debug, RelWithDebInfo]
-
-    env:
-      platform: windows
-      tag: 17.13.6
-      vendor: msvc
-
     steps:
-      - name: Checkout smoke from Nabla repository
+      - name: Checkout Nabla (partial, no submodules)
         uses: actions/checkout@v4
         with:
           repository: Devsh-Graphics-Programming/Nabla
-          ref: install-prebuilds
+          ref: master
           fetch-depth: 1
-          sparse-checkout: |
-            smoke
+          submodules: 'false'
+          filter: blob:none
+          show-progress: false
 
-      - name: Select repo and token
-        id: sel
+      - name: Init submodules (shallow + parallel)
         shell: pwsh
         run: |
-          $repo = '${{ inputs.repository }}'
-          if (-not $repo) { $repo = 'Devsh-Graphics-Programming/Nabla' }
-          $tok = '${{ github.token }}'
-          if ('${{ inputs.use_cross_repo_token }}' -eq 'true') { $tok = '${{ secrets.CROSS_REPO_TOKEN }}' }
-          "repo=$repo" >> $env:GITHUB_OUTPUT
-          "tok=$tok"   >> $env:GITHUB_OUTPUT
+          git config --global protocol.version 2
+          git submodule sync --recursive
+          git -c submodule.fetchJobs=8 submodule update --init --recursive --depth 1 --jobs 8
 
-      - name: Download artifacts for matrix config
-        uses: actions/download-artifact@v4
-        with:
-          repository: ${{ steps.sel.outputs.repo }}
-          run-id: ${{ inputs.run_id }}
-          github-token: ${{ steps.sel.outputs.tok }}
-          pattern: run-${{ env.platform }}-${{ env.tag }}-${{ env.vendor }}-${{ matrix.config }}-install
-          merge-multiple: false
-          path: smoke\downloads\${{ matrix.config }}
-
-      - name: Unpack installs
+      - name: Show repo summary
         shell: pwsh
         run: |
-          $dest = "smoke"
-          New-Item -ItemType Directory -Force -Path $dest | Out-Null
-          $tars = Get-ChildItem -Recurse -Path smoke\downloads\${{ matrix.config }} -Filter *-install.tar
-          if ($tars) {
-            foreach ($t in $tars) { tar -xf $t.FullName -C $dest }
-          } else {
-            $dirs = Get-ChildItem smoke\downloads\${{ matrix.config }} -Directory
-            if ($dirs) {
-              foreach ($d in $dirs) { Copy-Item -Recurse -Force "$($d.FullName)\*" $dest }
-            } else {
-              throw "No install artifacts found for ${{ matrix.config }}"
-            }
-          }
-          if (-not (Test-Path "smoke/build-ct/install")) { throw "smoke/build-ct/install not found" }
-          tree.com smoke /F
-
-      - name: Build smoke and run tests
-        shell: pwsh
-        run: |
-          cd smoke
-          cmake . -B out
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build out --config ${{ matrix.config }}
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ctest --test-dir out --force-new-ctest-process --output-on-failure --no-tests=error -C ${{ matrix.config }}
+          git rev-parse HEAD
+          git submodule status --recursive
