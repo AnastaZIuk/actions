@@ -81,5 +81,4 @@ jobs:
             }
           }
           Write-Host "Unpacked to $dest"
-          Write-Host "Directory listing:"
-          Get-ChildItem -Recurse -Force -Path $dest
+          tree.com $dest /F /A
