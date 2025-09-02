@@ -1,34 +1,44 @@
-name: Fast Nabla Clone
+name: Fast Shallow Checkout (Workspace Cache)
 
 on:
   workflow_dispatch:
+    inputs:
+      repository:
+        required: false
+        default: Devsh-Graphics-Programming/Nabla
+      ref:
+        required: false
+        default: master
 
 jobs:
-  clone-nabla:
+  shallow-checkout:
     runs-on: windows-2022
     steps:
-      - name: Init Checkout
-        uses: actions/checkout@v4
+      - name: Restore mirror cache
+        uses: actions/cache@v4
         with:
-          repository: Devsh-Graphics-Programming/Nabla
-          ref: master
-          fetch-depth: 1
-          submodules: 'false'
-          filter: blob:none
-          show-progress: false
+          path: .git-mirror\nabla.git
+          key: nabla-mirror-${{ runner.os }}-v1
+          restore-keys: |
+            nabla-mirror-${{ runner.os }}-
 
-      - name: Perform Checkout
+      - name: Ensure mirror in workspace
         shell: pwsh
         run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git config --global protocol.version 2
-          git config --global fetch.parallel 64
-          git config --global checkout.workers 16
-          git config --global http.version HTTP/2
-          git -c submodule.fetchJobs=64 submodule update --init --recursive --depth 1 --jobs 64
+          if (-not (Test-Path '.git-mirror')) { New-Item -ItemType Directory -Path .git-mirror | Out-Null }
+          if (-not (Test-Path '.git-mirror\nabla.git')) {
+            git clone --mirror --filter=blob:none https://github.com/${{ inputs.repository }}.git .git-mirror/nabla.git
+          } else {
+            git --git-dir .git-mirror/nabla.git fetch --prune --tags --force --filter=blob:none
+          }
 
-      - name: Show repo summary
+      - name: Shallow checkout using mirror
+        shell: pwsh
+        run: |
+          git clone --filter=blob:none --reference-if-able .git-mirror/nabla.git --dissociate --depth 1 --no-checkout https://github.com/${{ inputs.repository }}.git .
+          git checkout -f ${{ inputs.ref }}
+
+      - name: Show HEAD
         shell: pwsh
         run: |
           git rev-parse HEAD
-          git submodule status --recursive
