@@ -1,53 +1,48 @@
-name: Shallow Nabla + Submodules (Workspace Cache)
+name: Shallow Nabla (master cache)
 
 on:
   workflow_dispatch:
-    inputs:
-      repository:
-        required: false
-        default: Devsh-Graphics-Programming/Nabla
-      ref:
-        required: false
-        default: master
 
 jobs:
-  shallow-checkout:
+  checkout-master-fast:
     runs-on: windows-2022
     steps:
-      - name: Restore mirror cache
+      - name: Restore bare cache (master only)
         uses: actions/cache@v4
         with:
-          path: .git-mirror/nabla.git
-          key: nabla-mirror-${{ runner.os }}-v1
-          restore-keys: |
-            nabla-mirror-${{ runner.os }}-
+          path: .git-cache/nabla-bare.git
+          key: nabla-bare-master-${{ runner.os }}-v1
 
-      - name: Ensure mirror in workspace
+      - name: Ensure bare cache (master)
         shell: pwsh
         run: |
-          if (-not (Test-Path '.git-mirror')) { New-Item -ItemType Directory -Path .git-mirror | Out-Null }
-          if (-not (Test-Path '.git-mirror/nabla.git')) {
-            git clone --mirror --filter=blob:none https://github.com/${{ inputs.repository }}.git .git-mirror/nabla.git
-          } else {
-            git --git-dir .git-mirror/nabla.git fetch --prune --tags --force --filter=blob:none
+          $bare = ".git-cache/nabla-bare.git"
+          if (-not (Test-Path ".git-cache")) { New-Item -ItemType Directory -Path .git-cache | Out-Null }
+          if (-not (Test-Path $bare)) {
+            git init --bare $bare
+            git -C $bare remote add origin https://github.com/Devsh-Graphics-Programming/Nabla.git
+            git -C $bare config remote.origin.promisor true
+            git -C $bare config remote.origin.partialclonefilter blob:none
           }
+          git -C $bare remote set-branches origin master
+          git -C $bare fetch --no-tags --depth 1 origin +refs/heads/master:refs/heads/master
 
-      - name: Shallow clone using mirror
+      - name: Shallow clone from cache
         shell: pwsh
         run: |
-          git clone --filter=blob:none --reference-if-able .git-mirror/nabla.git --dissociate --depth 1 https://github.com/${{ inputs.repository }}.git nabla
+          git clone --filter=blob:none --reference-if-able .git-cache/nabla-bare.git --dissociate --depth 1 https://github.com/Devsh-Graphics-Programming/Nabla.git nabla
           cd nabla
-          git checkout -f ${{ inputs.ref }}
+          git checkout -f master
 
       - name: Restore submodules object cache
         uses: actions/cache@v4
         with:
           path: nabla/.git/modules
-          key: nabla-submods-${{ runner.os }}-v1
+          key: nabla-submods-master-${{ runner.os }}-v1-${{ hashFiles('nabla/.gitmodules') }}
           restore-keys: |
-            nabla-submods-${{ runner.os }}-
+            nabla-submods-master-${{ runner.os }}-v1-
 
-      - name: Init submodules (HTTPS rewrite + shallow + parallel)
+      - name: Init submodules (shallow + parallel)
         shell: pwsh
         run: |
           cd nabla
