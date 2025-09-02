@@ -1,4 +1,4 @@
-name: Fast Shallow Checkout (Workspace Cache)
+name: Shallow Nabla + Submodules (Workspace Cache)
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ jobs:
       - name: Restore mirror cache
         uses: actions/cache@v4
         with:
-          path: .git-mirror\nabla.git
+          path: .git-mirror/nabla.git
           key: nabla-mirror-${{ runner.os }}-v1
           restore-keys: |
             nabla-mirror-${{ runner.os }}-
@@ -26,19 +26,42 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Test-Path '.git-mirror')) { New-Item -ItemType Directory -Path .git-mirror | Out-Null }
-          if (-not (Test-Path '.git-mirror\nabla.git')) {
+          if (-not (Test-Path '.git-mirror/nabla.git')) {
             git clone --mirror --filter=blob:none https://github.com/${{ inputs.repository }}.git .git-mirror/nabla.git
           } else {
             git --git-dir .git-mirror/nabla.git fetch --prune --tags --force --filter=blob:none
           }
 
-      - name: Shallow checkout using mirror
+      - name: Shallow clone using mirror
         shell: pwsh
         run: |
-          git clone --filter=blob:none --reference-if-able .git-mirror/nabla.git --dissociate --depth 1 --no-checkout https://github.com/${{ inputs.repository }}.git .
+          git clone --filter=blob:none --reference-if-able .git-mirror/nabla.git --dissociate --depth 1 https://github.com/${{ inputs.repository }}.git nabla
+          cd nabla
           git checkout -f ${{ inputs.ref }}
 
-      - name: Show HEAD
+      - name: Restore submodules object cache
+        uses: actions/cache@v4
+        with:
+          path: nabla/.git/modules
+          key: nabla-submods-${{ runner.os }}-v1
+          restore-keys: |
+            nabla-submods-${{ runner.os }}-
+
+      - name: Init submodules (HTTPS rewrite + shallow + parallel)
         shell: pwsh
         run: |
+          cd nabla
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global protocol.version 2
+          git config --global fetch.parallel 64
+          git config --global checkout.workers 16
+          git config --global http.version HTTP/2
+          git submodule sync --recursive
+          git -c submodule.fetchJobs=64 submodule update --init --recursive --depth 1 --jobs 64
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          cd nabla
           git rev-parse HEAD
+          git submodule status --recursive
