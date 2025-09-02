@@ -1,46 +1,82 @@
-name: Build
+name: Unpack installs from another run (matrix)
 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: read
-  checks: write
+    inputs:
+      repository:
+        description: owner/repo of source workflow (empty uses default)
+        required: false
+        default: Devsh-Graphics-Programming/Nabla
+      run_id:
+        description: ID of the workflow run
+        required: true
+      use_cross_repo_token:
+        description: Use secrets.CROSS_REPO_TOKEN (actions:read)
+        required: false
+        default: 'false'
 
 jobs:
-  matrix-job:
-    name: Update Images Endpoint Test
-    runs-on: ${{ matrix.os }}
+  unpack-installs-remote:
+    runs-on: windows-2022
+    permissions:
+      contents: read
+      actions: read
+
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022]
+        config: [Release, Debug, RelWithDebInfo]
+
+    env:
+      platform: windows
+      tag: 17.13.6
+      vendor: msvc
 
     steps:
-      - name: Update Images
+      - name: Checkout shallow no submodules
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: 'false'
+
+      - name: Select repo and token
+        id: sel
+        shell: pwsh
         run: |
-          function Invoke-UpdateImages {
-              param(
-                  [string]$Token,
-                  [string]$Url = 'https://godbolt.devsh.eu/api/update-images'
-              )
-          
-              $resp = Invoke-WebRequest -Method Post `
-                                        -Uri $Url `
-                                        -Headers @{ 'X-API-Token' = $Token } `
-                                        -SkipHttpErrorCheck
-          
-              $httpCode = $resp.StatusCode
-              $body = $resp.Content | ConvertFrom-Json
-          
-              Write-Host "HTTP code : $httpCode"
-              Write-Host "status    : $($body.status)"
-              Write-Host "message   : $($body.message)"
-          
-              if ($httpCode -ne 200) {
-                  throw "Request failed"
+          $repo = '${{ inputs.repository }}'
+          if (-not $repo) { $repo = 'Devsh-Graphics-Programming/Nabla' }
+          $tok = '${{ github.token }}'
+          if ('${{ inputs.use_cross_repo_token }}' -eq 'true') { $tok = '${{ secrets.CROSS_REPO_TOKEN }}' }
+          "repo=$repo" >> $env:GITHUB_OUTPUT
+          "tok=$tok"   >> $env:GITHUB_OUTPUT
+
+      - name: Download artifacts for matrix config
+        uses: actions/download-artifact@v4
+        with:
+          repository: ${{ steps.sel.outputs.repo }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ steps.sel.outputs.tok }}
+          pattern: run-${{ env.platform }}-${{ env.tag }}-${{ env.vendor }}-${{ matrix.config }}-install
+          merge-multiple: false
+          path: smoke\downloads\${{ matrix.config }}
+
+      - name: Unpack installs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path smoke\installs\${{ matrix.config }} | Out-Null
+          $tars = Get-ChildItem -Recurse -Path smoke\downloads\${{ matrix.config }} -Filter *-install.tar
+          if (-not $tars) {
+            $dirs = Get-ChildItem smoke\downloads\${{ matrix.config }} -Directory
+            if ($dirs) {
+              foreach ($d in $dirs) {
+                Copy-Item -Recurse -Force $d.FullName smoke\installs\${{ matrix.config }}
               }
+            } else {
+              throw "No install artifacts found for ${{ matrix.config }}"
+            }
+          } else {
+            foreach ($t in $tars) {
+              tar -xf $t.FullName -C smoke\installs\${{ matrix.config }}
+            }
           }
-          
-          $token = '${{ secrets.CE_IMAGE_UPDATE_TOKEN }}'
-          Invoke-UpdateImages -Token $token
+          Write-Host "Unpacked to smoke\\installs\\${{ matrix.config }}"
