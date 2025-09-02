@@ -7,7 +7,7 @@ jobs:
   clone-nabla:
     runs-on: windows-2022
     steps:
-      - name: Checkout Nabla (partial, no submodules)
+      - name: Init Checkout
         uses: actions/checkout@v4
         with:
           repository: Devsh-Graphics-Programming/Nabla
@@ -17,13 +17,15 @@ jobs:
           filter: blob:none
           show-progress: false
 
-      - name: Init dependencies
+      - name: Perform Checkout
         shell: pwsh
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           git config --global protocol.version 2
-          git submodule sync --recursive
-          git -c submodule.fetchJobs=8 submodule update --init --recursive --depth 1 --jobs 8
+          git config --global fetch.parallel 64
+          git config --global checkout.workers 16
+          git config --global http.version HTTP/2
+          git -c submodule.fetchJobs=64 submodule update --init --recursive --depth 1 --jobs 64
 
       - name: Show repo summary
         shell: pwsh
