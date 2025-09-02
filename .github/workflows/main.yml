@@ -30,9 +30,7 @@ jobs:
       - name: Shallow clone from cache
         shell: pwsh
         run: |
-          git clone --filter=blob:none --reference-if-able .git-cache/nabla-bare.git --dissociate --depth 1 https://github.com/Devsh-Graphics-Programming/Nabla.git nabla
-          cd nabla
-          git checkout -f master
+          git clone --filter=blob:none --reference-if-able .git-cache/nabla-bare.git --dissociate --depth 1 --single-branch --branch master https://github.com/Devsh-Graphics-Programming/Nabla.git nabla
 
       - name: Restore submodules object cache
         uses: actions/cache@v4
@@ -52,7 +50,7 @@ jobs:
           git config --global checkout.workers 16
           git config --global http.version HTTP/2
           git submodule sync --recursive
-          git -c submodule.fetchJobs=64 submodule update --init --recursive --depth 1 --jobs 64
+          git -c submodule.alternateLocation=superproject -c submodule.alternateErrorStrategy=info -c submodule.fetchJobs=64 submodule update --init --recursive --depth 1 --jobs 64 --recommend-shallow
 
       - name: Summary
         shell: pwsh
