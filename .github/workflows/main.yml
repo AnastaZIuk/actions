@@ -64,30 +64,28 @@ jobs:
       - name: Unpack installs
         shell: pwsh
         run: |
-          $dest = "smoke\installs\${{ matrix.config }}"
+          $dest = "smoke"
           New-Item -ItemType Directory -Force -Path $dest | Out-Null
           $tars = Get-ChildItem -Recurse -Path smoke\downloads\${{ matrix.config }} -Filter *-install.tar
-          if (-not $tars) {
+          if ($tars) {
+            foreach ($t in $tars) { tar -xf $t.FullName -C $dest }
+          } else {
             $dirs = Get-ChildItem smoke\downloads\${{ matrix.config }} -Directory
             if ($dirs) {
-              foreach ($d in $dirs) {
-                Copy-Item -Recurse -Force $d.FullName $dest
-              }
+              foreach ($d in $dirs) { Copy-Item -Recurse -Force "$($d.FullName)\*" $dest }
             } else {
               throw "No install artifacts found for ${{ matrix.config }}"
             }
-          } else {
-            foreach ($t in $tars) {
-              tar -xf $t.FullName -C $dest
-            }
           }
-          Write-Host "Unpacked to $dest"
-          tree.com $dest /F
+          if (-not (Test-Path "smoke/build-ct/install")) { throw "smoke/build-ct/install not found" }
+          tree.com smoke /F
 
       - name: Build smoke and run tests
         shell: pwsh
         run: |
           cd smoke
           cmake . -B out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build out --config ${{ matrix.config }}
-          ctest --test-dir out --force-new-ctest-process --output-on-failure -C ${{ matrix.config }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir out --force-new-ctest-process --output-on-failure --no-tests=error -C ${{ matrix.config }}
