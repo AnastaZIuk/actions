@@ -36,9 +36,9 @@ jobs:
           }
           $ref = $env:GITHUB_REF
           if ($ref -like 'refs/pull/*') {
-            git --git-dir .git-mirror/nabla.git fetch --filter=blob:none --no-tags --force origin $ref:$ref
+            git --git-dir .git-mirror/nabla.git fetch --filter=blob:none --no-tags --force origin "$ref"
           } else {
-            git --git-dir .git-mirror/nabla.git fetch --filter=blob:none --no-tags --force origin $env:GITHUB_SHA
+            git --git-dir .git-mirror/nabla.git fetch --filter=blob:none --no-tags --force origin "$env:GITHUB_SHA"
           }
 
       - name: Init submodules (shallow + parallel)
