@@ -28,5 +28,5 @@ jobs:
           $env:VK_ICD_FILENAMES = "C:\lavapipe\share\vulkan\icd.d\lvp_icd.x86_64.json"
           $env:PATH = "C:\lavapipe\bin;$env:PATH"
 
-          vulkaninfo.exe -j -o profile.json
+          vulkaninfoSDK.exe -j -o profile.json
           Get-Content -Raw profile.json
