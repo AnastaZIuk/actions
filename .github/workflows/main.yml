@@ -22,6 +22,8 @@ jobs:
           stripdown: true
           install_lavapipe: true
 
+      - uses: fawazahmed0/action-debug-vscode@main
+
       - name: Run vulkaninfo via lavapipe
         shell: pwsh
         run: |
