@@ -18,17 +18,13 @@ jobs:
         uses: jakoch/install-vulkan-sdk-action@v1
         with:
           install_runtime: true
-          cache: false
+          cache: true
           stripdown: true
           install_lavapipe: true
-
-      - uses: fawazahmed0/action-debug-vscode@main
 
       - name: Run vulkaninfo via lavapipe
         shell: pwsh
         run: |
-          $env:VK_ICD_FILENAMES = "C:\lavapipe\share\vulkan\icd.d\lvp_icd.x86_64.json"
-          $env:PATH = "C:\lavapipe\bin;$env:PATH"
-
+          reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers" /v "C:\lavapipe\share\vulkan\icd.d\lvp_icd.x86_64.json" /t REG_DWORD /d 0 /f
           vulkaninfoSDK.exe -j -o profile.json
           Get-Content -Raw profile.json
