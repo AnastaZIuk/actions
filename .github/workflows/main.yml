@@ -26,7 +26,6 @@ jobs:
               ? 'Check Only / Examples (windows-2022, msvc-17.13.6, Debug) (pull_request)'
               : 'Examples (windows-2022, msvc-17.13.6, Debug)';
             let detailsUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
-            let resolvedUrl = detailsUrl;
             try {
               const jobs = await github.rest.actions.listJobsForWorkflowRun({
                 owner: context.repo.owner,
@@ -42,18 +41,12 @@ jobs:
                 }
               }
             } catch (e) {}
-            resolvedUrl = detailsUrl;
             const check = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name,
               head_sha: context.sha,
-              status: 'in_progress',
-              details_url: detailsUrl,
-              output: {
-                title: 'Details URL',
-                summary: resolvedUrl
-              }
+              status: 'in_progress'
             });
             await github.rest.checks.update({
               owner: context.repo.owner,
@@ -61,5 +54,10 @@ jobs:
               check_run_id: check.data.id,
               status: 'completed',
               conclusion: 'success',
-              completed_at: new Date().toISOString()
+              completed_at: new Date().toISOString(),
+              details_url: detailsUrl,
+              output: {
+                title: 'Details URL',
+                summary: detailsUrl
+              }
             });
