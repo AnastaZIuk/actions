@@ -18,13 +18,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const suffix = context.eventName === 'pull_request' ? 'pull_request' : 'push';
-            const name = `Examples (windows-2022, msvc-17.13.6, Debug) (${suffix})`;
+            const isPr = context.eventName === 'pull_request';
+            const name = 'Examples (windows-2022, msvc-17.13.6, Debug)';
             const check = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name,
-              head_sha: context.sha,
+              head_sha: isPr ? context.payload.pull_request.head.sha : context.sha,
               status: 'in_progress'
             });
             await github.rest.checks.update({
