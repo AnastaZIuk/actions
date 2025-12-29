@@ -7,12 +7,15 @@ on:
 
 permissions:
   contents: read
+  actions: read
   checks: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      - name: Dummy log step
+        run: echo "test"
       - name: Create Examples check
         uses: actions/github-script@v6
         with:
@@ -22,12 +25,29 @@ jobs:
             const name = isPr
               ? 'Check Only / Examples (windows-2022, msvc-17.13.6, Debug) (pull_request)'
               : 'Examples (windows-2022, msvc-17.13.6, Debug)';
+            let detailsUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            try {
+              const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: process.env.GITHUB_RUN_ID
+              });
+              const job = jobs.data.jobs.find(j => j.name === context.job) || jobs.data.jobs[0];
+              if (job) {
+                detailsUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}/job/${job.id}`;
+                const step = (job.steps || []).find(s => s.name === 'Dummy log step');
+                if (step && step.number) {
+                  detailsUrl = `${detailsUrl}#step:${step.number}:1`;
+                }
+              }
+            } catch (e) {}
             const check = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name,
               head_sha: context.sha,
-              status: 'in_progress'
+              status: 'in_progress',
+              details_url: detailsUrl
             });
             await github.rest.checks.update({
               owner: context.repo.owner,
