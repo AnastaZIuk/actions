@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  actions: read
   checks: write
 
 jobs:
@@ -16,41 +15,22 @@ jobs:
     steps:
       - name: Dummy log step
         run: echo "test"
-      - name: Create app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.CHECKS_APP_ID }}
-          private-key: ${{ secrets.CHECKS_APP_PRIVATE_KEY }}
       - name: Create Examples check
         uses: actions/github-script@v6
         with:
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const isPr = context.eventName === 'pull_request';
-            const name = 'Examples (windows-2022, msvc-17.13.6, Debug)';
-            let detailsUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
-            try {
-              const jobs = await github.rest.actions.listJobsForWorkflowRun({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: process.env.GITHUB_RUN_ID
-              });
-              const job = jobs.data.jobs.find(j => j.name === context.job) || jobs.data.jobs[0];
-              if (job) {
-                detailsUrl = job.html_url || `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}/job/${job.id}`;
-                const step = (job.steps || []).find(s => s.name === 'Dummy log step');
-                if (step && step.number) {
-                  detailsUrl = `${detailsUrl}#step:${step.number}:1`;
-                }
-              }
-            } catch (e) {}
+            const suffix = isPr ? 'pull_request' : 'push';
+            const name = `Examples (windows-2022, msvc-17.13.6, Debug) (${suffix})`;
+            const detailsUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const check = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name,
               head_sha: context.sha,
-              status: 'in_progress'
+              status: 'in_progress',
+              details_url: detailsUrl
             });
             await github.rest.checks.update({
               owner: context.repo.owner,
@@ -59,9 +39,5 @@ jobs:
               status: 'completed',
               conclusion: 'success',
               completed_at: new Date().toISOString(),
-              details_url: detailsUrl,
-              output: {
-                title: 'Details URL',
-                summary: detailsUrl
-              }
+              details_url: detailsUrl
             });
