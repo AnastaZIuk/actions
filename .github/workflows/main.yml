@@ -45,12 +45,11 @@ jobs:
                 }
               }
             } catch (e) {}
-            const prSha = isPr ? (context.payload.pull_request.merge_commit_sha || context.payload.pull_request.head.sha) : context.sha;
             const check = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name,
-              head_sha: prSha,
+              head_sha: context.sha,
               status: 'in_progress'
             });
             await github.rest.checks.update({
