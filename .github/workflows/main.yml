@@ -45,7 +45,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               name,
-              head_sha: context.sha,
+              head_sha: isPr ? context.payload.pull_request.head.sha : context.sha,
               status: 'in_progress'
             });
             await github.rest.checks.update({
