@@ -28,9 +28,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const isPr = context.eventName === 'pull_request';
-            const name = isPr
-              ? 'Check Only / Examples (windows-2022, msvc-17.13.6, Debug) (pull_request)'
-              : 'Examples (windows-2022, msvc-17.13.6, Debug)';
+            const name = 'Examples (windows-2022, msvc-17.13.6, Debug)';
             let detailsUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             try {
               const jobs = await github.rest.actions.listJobsForWorkflowRun({
