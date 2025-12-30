@@ -16,10 +16,16 @@ jobs:
     steps:
       - name: Dummy log step
         run: echo "test"
+      - name: Create app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CHECKS_APP_ID }}
+          private-key: ${{ secrets.CHECKS_APP_PRIVATE_KEY }}
       - name: Create Examples check
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const isPr = context.eventName === 'pull_request';
             const name = isPr
